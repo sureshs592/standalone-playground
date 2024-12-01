@@ -1,10 +1,11 @@
 // @ts-ignore
-import playground from './playground.html';
+import playgroundHTML from './playground.html';
 
 type ZendeskConfiguration = {
 	subdomain: string;
-	signingKeyID: string;
-	signingKeySecret: string;
+	messenger_key: string;
+	signing_key_id: string;
+	signing_key_secret: string;
 };
 
 export default class ZendeskPlayground {
@@ -25,13 +26,22 @@ export default class ZendeskPlayground {
 	}
 
 	async generatePage(): Promise<Response> {
-		let zendeskConfig = await this.getZendeskConfig();
+		let htmlPage = await this.generateHTMLPage();
 
-		return new Response(playground, {
+		return new Response(htmlPage, {
 			headers: {
 				'content-type': 'text/html',
 			},
 		});
+	}
+
+	private async generateHTMLPage(): Promise<string> {
+		let zendeskConfig = await this.getZendeskConfig();
+
+		let htmlPage: string = playgroundHTML // Source HTML
+			.replace('{{ZD_MESSENGER_KEY}}', zendeskConfig.messenger_key); // Inject the messenger key
+
+		return htmlPage;
 	}
 
 	private async getZendeskConfig(): Promise<ZendeskConfiguration> {
