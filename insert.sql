@@ -1,0 +1,1 @@
+INSERT INTO zendesk_configurations (subdomain, signing_key_id, signing_key_secret) VALUES ('subdomain', 'key_id', 'key_secret');
