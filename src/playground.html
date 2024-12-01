@@ -26,7 +26,23 @@
 
         window.localStorage.clear();
         window.sessionStorage.clear();
-        window.location.reload();
+
+        let userId = document.getElementById('user_id').value;
+        let email = document.getElementById('email').value;
+        let currentURL = new URL(window.location.href);
+        let destinationBaseURL = currentURL.origin + currentURL.pathname;
+
+        if (userId) {
+          let queryParams = `?user_id=${encodeURIComponent(userId)}`;
+
+          if (email) {
+            queryParams += `&email=${encodeURIComponent(email)}`;
+          }
+
+          window.location = destinationBaseURL + queryParams;
+        } else {
+          window.location = destinationBaseURL;
+        }
       }
     </script>
   </head>
@@ -35,9 +51,25 @@
       <div>
         <img src="https://static.intercomassets.com/assets/default-avatars/fin/128-6a5eabbb84cc2b038b2afc6698ca0a974faf7adc9ea9f0fb3c3e78ac12543bc5.png" height="50" width="50"  >
       </div>
+      <input class="px-2 py-1 rounded-md border-2 border-black" type="text" id="user_id" placeholder="User ID" />
+      <input class="px-2 py-1 rounded-md border-2 border-black" type="text" id="email" placeholder="Email" />
       <button class="bg-black text-white p-2 m-2 rounded hover:bg-opacity-75" onclick="reset()">Reset</button>
     </div>
 
     <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key={{ZD_MESSENGER_KEY}}"> </script>
+
+    <!-- Handle user authentication if specified -->
+    <script>
+      let url = new URL(window.location.href);
+      let userIdParam = url.searchParams.get('user_id');
+      if (userIdParam) {
+        zE("messenger", "loginUser", function (callback) {
+          callback("{{ZD_MESSENGER_USER_AUTH_KEY}}");
+        });
+
+        document.getElementById('user_id').value = userIdParam;
+        document.getElementById('email').value = url.searchParams.get('email');
+      }
+    </script>
   </body>
 </html>

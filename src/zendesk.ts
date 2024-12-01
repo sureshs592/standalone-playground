@@ -1,5 +1,6 @@
 // @ts-ignore
 import playgroundHTML from './playground.html';
+import jwt from 'jsonwebtoken';
 
 type ZendeskConfiguration = {
 	subdomain: string;
@@ -10,16 +11,22 @@ type ZendeskConfiguration = {
 
 export default class ZendeskPlayground {
 	subdomain: string;
-	url: URL;
+	email: string | null;
+	externalId: string | null;
 	env: Env;
 
 	constructor(env: Env, url: URL) {
 		this.env = env;
-		this.url = url;
-		let extractedSubdomain = this.url.pathname.split('/')[2];
+		this.email = url.searchParams.get('email');
+		this.externalId = url.searchParams.get('user_id');
 
+		if (this.email && !this.externalId) {
+			throw new Error(`user_id param required`);
+		}
+
+		let extractedSubdomain = url.pathname.split('/')[2];
 		if (!extractedSubdomain) {
-			throw new Error(`Could not extract subdomain from path: ${this.url.pathname}`);
+			throw new Error(`Could not extract subdomain from path: ${url.pathname}`);
 		} else {
 			this.subdomain = extractedSubdomain;
 		}
@@ -41,6 +48,10 @@ export default class ZendeskPlayground {
 		let htmlPage: string = playgroundHTML // Source HTML
 			.replace('{{ZD_MESSENGER_KEY}}', zendeskConfig.messenger_key); // Inject the messenger key
 
+		if (this.externalId) {
+			htmlPage = htmlPage.replace('{{ZD_MESSENGER_USER_AUTH_KEY}}', this.generateAuthToken(zendeskConfig));
+		}
+
 		return htmlPage;
 	}
 
@@ -54,5 +65,25 @@ export default class ZendeskPlayground {
 		}
 
 		return results[0];
+	}
+
+	private generateAuthToken(zendeskConfig: ZendeskConfiguration): string {
+		let payload: any = {
+			external_id: this.externalId,
+			scope: 'user',
+		};
+
+		if (this.email) {
+			payload.email = this.email;
+			payload.email_verified = true;
+		}
+
+		let header = {
+			alg: 'HS256',
+			typ: 'JWT',
+			kid: zendeskConfig.signing_key_id,
+		};
+
+		return jwt.sign(payload, zendeskConfig.signing_key_secret, { header });
 	}
 }
